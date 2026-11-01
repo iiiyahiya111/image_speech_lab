@@ -1,7 +1,6 @@
 """
 py -m pip install opencv-python numpy matplotlib
 """
-
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,8 +24,13 @@ power_img = np.power(normalized, gamma)
 power_img = np.uint8(power_img * 255)
 
 # iii) High-pass Image
-blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
-high_pass = cv2.subtract(img_gray, blur)
+kernel = np.array([
+    [-1, -1, -1],
+    [-1,  8, -1],
+    [-1, -1, -1]
+])
+
+high_pass = cv2.filter2D(img_gray, -1, kernel)
 
 # Display Results
 plt.figure(figsize=(12, 8))
