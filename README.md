@@ -10,7 +10,7 @@ Run this command in the project folder (vs code terminal):
 py -m pip install opencv-python numpy matplotlib scikit-image scipy PyWavelets SpeechRecognition pyttsx3 sounddevice soundfile
 ```
 
-For `Lab12.py` offline speech recognition, install PocketSphinx:
+For `Lab14.py` offline speech recognition, install PocketSphinx:
 
 ```powershell
 py -m pip install --only-binary=:all: pocketsphinx
