@@ -1,12 +1,6 @@
 """
-Q12 (OFFLINE): Recognize a speech signal using PocketSphinx
-
-One-time setup (needs internet only once):
     pip install SpeechRecognition
     python -m pip install --only-binary=:all: pocketsphinx
-
-After that it works fully offline. English only.
-audio.wav must be a normal PCM wav file.
 """
 import speech_recognition as sr
 

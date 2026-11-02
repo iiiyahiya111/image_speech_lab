@@ -1,14 +1,6 @@
 """
-Q10: Separation of voiced / unvoiced / silence regions of a speech signal
-Method: Short-Time Energy (STE) + Zero Crossing Rate (ZCR)
-
-    Silence  -> very low energy
-    Voiced   -> high energy, LOW  zero-crossing rate
-    Unvoiced -> lower energy, HIGH zero-crossing rate (noise-like)
-
-Requires: numpy, scipy, matplotlib   (
-command:  pip install numpy scipy matplotlib  
-or use this command: py -m pip install numpy matplotlib scipy
+ pip install numpy scipy matplotlib  
+ py -m pip install numpy matplotlib scipy
 """
 import numpy as np
 import matplotlib.pyplot as plt
