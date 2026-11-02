@@ -1,48 +1,63 @@
 """
 py -m pip install opencv-python numpy matplotlib
-
 """
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Read image
-img = cv2.imread("cat.png")
+# Read original image in color
+img_color = cv2.imread("cat.png")
 
-if img is None:
-    raise FileNotFoundError("cat.png not found")
+# Convert a copy to grayscale for image processing
+img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
 
-# Original image
-original = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+# i) Threshold Image
+_, threshold = cv2.threshold(
+    img_gray, 127, 255, cv2.THRESH_BINARY
+)
 
-# Histogram Equalization
-ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-ycrcb[:, :, 0] = cv2.equalizeHist(ycrcb[:, :, 0])
-enhanced = cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2RGB)
+# ii) Power-law Enhancement
+gamma = 0.5
 
-# Smoothing Filters
-mean = cv2.cvtColor(cv2.blur(img, (3, 3)), cv2.COLOR_BGR2RGB)
-gaussian = cv2.cvtColor(cv2.GaussianBlur(img, (3, 3), 0), cv2.COLOR_BGR2RGB)
-median = cv2.cvtColor(cv2.medianBlur(img, 3), cv2.COLOR_BGR2RGB)
+normalized = img_gray / 255.0
+power_img = np.power(normalized, gamma)
+power_img = np.uint8(power_img * 255)
 
-# Sharpening Filter
-kernel = np.array([[0, -1, 0],
-                   [-1, 5, -1],
-                   [0, -1, 0]])
+# iii) High-pass Image
+kernel = np.array([
+    [-1, -1, -1],
+    [-1,  8, -1],
+    [-1, -1, -1]
+])
 
-sharp = cv2.cvtColor(cv2.filter2D(img, -1, kernel), cv2.COLOR_BGR2RGB)
+high_pass = cv2.filter2D(img_gray, -1, kernel)
 
 # Display Results
-titles = ["Original Image", "Enhanced Image", "Mean Filter",
-          "Gaussian Filter", "Median Filter", "Sharpened Image"]
+plt.figure(figsize=(12, 8))
 
-images = [original, enhanced, mean, gaussian, median, sharp]
+# Original image
+plt.subplot(2, 2, 1)
+plt.imshow(cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB))
+plt.title("Original Image")
+plt.axis("off")
 
-fig, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
+# Threshold
+plt.subplot(2, 2, 2)
+plt.imshow(threshold, cmap="gray")
+plt.title("Threshold Image")
+plt.axis("off")
 
-for ax, title, image in zip(axes.flat, titles, images):
-    ax.imshow(image)
-    ax.set_title(title, fontsize=13, pad=10)
-    ax.axis("off")
+# Power-law
+plt.subplot(2, 2, 3)
+plt.imshow(power_img, cmap="gray")
+plt.title("Power-law Enhanced Image")
+plt.axis("off")
 
+# High-pass
+plt.subplot(2, 2, 4)
+plt.imshow(high_pass, cmap="gray")
+plt.title("High-pass Image")
+plt.axis("off")
+
+plt.tight_layout()
 plt.show()

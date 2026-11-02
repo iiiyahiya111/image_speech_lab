@@ -1,83 +1,48 @@
 """
-Q10: Separation of voiced / unvoiced / silence regions of a speech signal
-Method: Short-Time Energy (STE) + Zero Crossing Rate (ZCR)
+py -m pip install opencv-python numpy matplotlib
 
-    Silence  -> very low energy
-    Voiced   -> high energy, LOW  zero-crossing rate
-    Unvoiced -> lower energy, HIGH zero-crossing rate (noise-like)
-
-Requires: numpy, scipy, matplotlib   (
-command:  pip install numpy scipy matplotlib  
-or use this command: py -m pip install numpy matplotlib scipy
 """
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.io import wavfile
 
-# ---------- 1. Read the signal ----------
-fs, x = wavfile.read('audio.wav')
-if x.ndim > 1:                      # stereo -> mono
-    x = x.mean(axis=1)
-x = x.astype(float)
-x = x / np.max(np.abs(x))           # normalise to [-1, 1]
-t = np.arange(len(x)) / fs
+# Read image
+img = cv2.imread("cat.png")
 
-# ---------- 2. Framing (25 ms frame, 10 ms hop) ----------
-frame_len = int(0.025 * fs)
-hop = int(0.010 * fs)
-n_frames = 1 + (len(x) - frame_len) // hop
+if img is None:
+    raise FileNotFoundError("cat.png not found")
 
-energy = np.zeros(n_frames)
-zcr = np.zeros(n_frames)
-for i in range(n_frames):
-    seg = x[i * hop: i * hop + frame_len]
-    energy[i] = np.sum(seg ** 2)                          # short-time energy
-    zcr[i] = 0.5 * np.mean(np.abs(np.diff(np.sign(seg))))  # zero-crossing rate
+# Original image
+original = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-# ---------- 3. Thresholds (tune these for your recording) ----------
-E_thr = 0.02 * np.max(energy)       # below this  -> silence
-Z_thr = 0.15                        # above this  -> unvoiced, else voiced
+# Histogram Equalization
+ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+ycrcb[:, :, 0] = cv2.equalizeHist(ycrcb[:, :, 0])
+enhanced = cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2RGB)
 
-# ---------- 4. Classify each frame: 0 = silence, 1 = unvoiced, 2 = voiced ----------
-label = np.zeros(n_frames, dtype=int)
-for i in range(n_frames):
-    if energy[i] < E_thr:
-        label[i] = 0
-    elif zcr[i] > Z_thr:
-        label[i] = 1
-    else:
-        label[i] = 2
+# Smoothing Filters
+mean = cv2.cvtColor(cv2.blur(img, (3, 3)), cv2.COLOR_BGR2RGB)
+gaussian = cv2.cvtColor(cv2.GaussianBlur(img, (3, 3), 0), cv2.COLOR_BGR2RGB)
+median = cv2.cvtColor(cv2.medianBlur(img, 3), cv2.COLOR_BGR2RGB)
 
-# ---------- 5. Expand frame labels to sample level ----------
-sample_label = np.zeros(len(x), dtype=int)
-for i in range(n_frames):
-    sample_label[i * hop: i * hop + hop] = label[i]
-sample_label[n_frames * hop:] = label[-1]
+# Sharpening Filter
+kernel = np.array([[0, -1, 0],
+                   [-1, 5, -1],
+                   [0, -1, 0]])
 
-# ---------- 6. Plots ----------
-names = ['Silence', 'Unvoiced', 'Voiced']
-colors = ['gray', 'red', 'blue']
+sharp = cv2.cvtColor(cv2.filter2D(img, -1, kernel), cv2.COLOR_BGR2RGB)
 
-plt.figure(figsize=(11, 8))
+# Display Results
+titles = ["Original Image", "Enhanced Image", "Mean Filter",
+          "Gaussian Filter", "Median Filter", "Sharpened Image"]
 
-plt.subplot(4, 1, 1)
-plt.plot(t, x, 'k')
-plt.title('Original speech signal'); plt.ylabel('Amplitude')
+images = [original, enhanced, mean, gaussian, median, sharp]
 
-plt.subplot(4, 1, 2)
-plt.plot(energy); plt.axhline(E_thr, color='r', ls='--', label='Energy threshold')
-plt.title('Short-time energy'); plt.legend()
+fig, axes = plt.subplots(2, 3, figsize=(15, 9), constrained_layout=True)
 
-plt.subplot(4, 1, 3)
-plt.plot(zcr); plt.axhline(Z_thr, color='r', ls='--', label='ZCR threshold')
-plt.title('Zero-crossing rate'); plt.legend()
+for ax, title, image in zip(axes.flat, titles, images):
+    ax.imshow(image)
+    ax.set_title(title, fontsize=13, pad=10)
+    ax.axis("off")
 
-plt.subplot(4, 1, 4)
-for c in range(3):
-    y = np.where(sample_label == c, x, np.nan)
-    plt.plot(t, y, color=colors[c], label=names[c])
-plt.title('Voiced / Unvoiced / Silence regions')
-plt.xlabel('Time (s)'); plt.legend(loc='upper right')
-
-plt.tight_layout()
 plt.show()
